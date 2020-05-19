@@ -117,7 +117,7 @@ class AdminController {
 			// .where('in_member.level',Inputs.level)
 			.orderBy('in_member.nama','ASC')
 		return response.json(ayah)
-	}
+	} 
 
 	async tambah_member ({request,response}){
 		const Inputs = request.only(['id_marga','nama','email','no_telpon','alamat','provinsi_kelahiran','kota_kelahiran','tanggal_lahir','nama_ayah','referensi','keturunan_ke','username','password','jenis_kelamin','level','id_member'])
