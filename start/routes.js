@@ -46,6 +46,9 @@ Route.group(() => {
 	Route.post('status_member', 'Admin/AdminController.status_member')
 	Route.post('status_admin', 'Admin/AdminController.status_admin')
 	Route.post('get_ayah', 'Admin/AdminController.get_ayah')
+
+	Route.get('GetMemberFromId/:id', 'Admin/AdminController.GetMemberFromId')
+
 	Route.post('GetMemberForMarga', 'Admin/AdminController.GetMemberForMarga')
 	Route.post('PohonSilsilah', 'Admin/AdminController.PohonSilsilah')
 	

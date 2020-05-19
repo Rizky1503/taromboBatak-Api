@@ -80,15 +80,7 @@ class AdminController {
 			.table('in_member')
 			.orderBy('nama','ASC')
 			.where('status_member','Approved')
-		return response.json(member)
-	}
-
-	async get_member({response}){
-		const member = await Database
-			.query()
-			.table('in_member')
-			.orderBy('nama','ASC')
-			.where('status_member','Approved')
+			.whereNotNull('id_marga')
 		return response.json(member)
 	}
 
@@ -115,18 +107,21 @@ class AdminController {
 	}
 
 	async get_ayah({response,request}){
-		const Inputs = request.only(['id_marga'])
+		const Inputs = request.only(['id_marga','level'])
 		const ayah = await Database
 			.select('in_member.nama','in_member.id_member')
 			.table('in_silsilah')
-			.innerJoin('in_member','in_silsilah.id_member','in_member.id_member')
-			.where('in_silsilah.id_marga',Inputs.id_marga)
+			.innerJoin('in_relation','in_silsilah.id_ayah','in_silsilah.id_relationship')
+			.innerJoin('in_member','in_relation.suami','in_member.id_member')
+			.where('in_member.id_marga',Inputs.id_marga)
+			.where('in_member.jenis_kelamin','L')
+			.where('in_member.level',Inputs.level)
 			.orderBy('in_member.nama','ASC')
 		return response.json(ayah)
 	}
 
 	async tambah_member ({request,response}){
-		const Inputs = request.only(['id_marga','nama','email','no_telpon','alamat','provinsi_kelahiran','kota_kelahiran','tanggal_lahir','nama_ayah','referensi','keturunan_ke','username','password'])
+		const Inputs = request.only(['id_marga','nama','email','no_telpon','alamat','provinsi_kelahiran','kota_kelahiran','tanggal_lahir','nama_ayah','referensi','keturunan_ke','username','password','jenis_kelamin','level','id_member'])
 		const store = await Database
 			.from('in_member')
 			.insert([{
@@ -144,18 +139,121 @@ class AdminController {
 				password: Encryption.encrypt(Inputs.password), 
 				status_member: 'Approved', 
 				created_at : new Date(), 
-				updated_at : new Date() 
+				updated_at : new Date(),
+				jenis_kelamin : Inputs.jenis_kelamin, 
+				level : Inputs.level,
 			}])
 			.returning('id_member')
 
-		 const silsilah = await Database
-		 	.from('in_silsilah')
-		 	.insert([{
-				id_member : store[0],
-				id_marga  : Inputs.id_marga, 
-				id_ayah   : Inputs.nama_ayah 
-			}])
-		return response.json('berhasil')
+			const data = await Database
+				.from('in_silsilah')
+				.insert([{
+					id_member : store[0],
+					id_marga : Inputs.marga,
+					id_ayah : Inputs.nama_ayah
+				}])
+
+			if(Inputs.id_member){
+				if (Inputs.jenis_kelamin == 'L') {
+					const data = await Database
+						.from('in_relation')
+						.insert([{
+							suami : store[0],
+							istri : Inputs.id_member
+						}])
+				}else{
+					const data = await Database
+						.from('in_relation')
+						.insert([{
+							istri : store[0],
+							suami : Inputs.id_member
+						}])
+				}
+			}
+
+		return response.json(store[0])
+	}
+
+	async GetMemberFromId ({request,response,params}){
+		const Inputs = request.only(['id_member'])
+
+		const count = await Database
+			.count()
+			.table('in_relation')
+			.where('suami',params.id)
+			.orWhere('istri',params.id)
+			.first()
+
+		if (count.count < 1){
+			const member = await Database
+				.query()
+				.from('in_member')
+				.where('id_member',params.id)
+				.first()
+			if (member.jenis_kelamin == 'L') {
+				return response.json({
+	            	suami 	: member,
+	            	istri 	: [],
+	            	count   : count.count,
+	            	id_relation : [],
+            		anak : []
+        		})
+			}else{
+				return response.json({
+	            	suami 	: [],
+	            	istri 	: member,
+	            	count   : count.count,
+	            	id_relation : [],
+            		anak : []
+        		})
+			}
+			
+		}else{
+			const member = await Database
+				.table('in_relation')
+				.where('suami',params.id)
+				.orWhere('istri',params.id)
+				.first()
+
+			const suami = await Database
+				.query()
+				.from('in_member')
+				.where('id_member',member.suami)
+				.first()
+
+			const istri = await Database
+				.query()
+				.from('in_member')
+				.where('id_member',member.istri)
+				.first()
+
+			const dataAnak = await Database
+				.query()
+				.table('in_silsilah')
+				.where('id_ayah',member.id_relationship)
+
+			var Tampung_Data_soal = [];
+	  			for (var i = 0; i < dataAnak.length; i++) {	  			  		
+	  				const soal_mata_pelajaran = await Database
+				  		.query()
+					  	.table('in_member')
+					  	.where('id_member', dataAnak[i].id_member)
+					  	.first()
+				  		Tampung_Data_soal.push(soal_mata_pelajaran);	
+			  }
+
+
+
+			return response.json({
+            	suami 	: suami,
+            	istri 	: istri,
+            	count   : count.count,
+            	id_relation : member,
+            	anak : Tampung_Data_soal
+            })
+		}
+
+		
 	}
 
 	async list_member ({request,response}){
