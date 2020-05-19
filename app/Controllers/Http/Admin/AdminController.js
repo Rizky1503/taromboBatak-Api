@@ -109,7 +109,7 @@ class AdminController {
 	async get_ayah({response,request}){
 		const Inputs = request.only(['id_marga','level'])
 		const ayah = await Database
-			.select('in_member.nama','in_member.id_member')
+			.select('in_member.nama','in_relation.id_relationship')
 			.table('in_relation')
 			.leftJoin('in_member','in_relation.suami','in_member.id_member')
 			.where('in_member.id_marga',Inputs.id_marga)
