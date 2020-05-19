@@ -110,12 +110,11 @@ class AdminController {
 		const Inputs = request.only(['id_marga','level'])
 		const ayah = await Database
 			.select('in_member.nama','in_member.id_member')
-			.table('in_silsilah')
-			.innerJoin('in_relation','in_silsilah.id_ayah','in_silsilah.id_relationship')
-			.innerJoin('in_member','in_relation.suami','in_member.id_member')
+			.table('in_relation')
+			.leftJoin('in_member','in_relation.suami','in_member.id_member')
 			.where('in_member.id_marga',Inputs.id_marga)
 			.where('in_member.jenis_kelamin','L')
-			.where('in_member.level',Inputs.level)
+			// .where('in_member.level',Inputs.level)
 			.orderBy('in_member.nama','ASC')
 		return response.json(ayah)
 	}
