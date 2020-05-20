@@ -340,8 +340,7 @@ class AdminController {
 									kake[keyUyut]['ibu'] = uyut_cwe;
 								}
 							}else{
-								kake[keyUyut]['ayah'] = []
-								kake[keyUyut]['ibu'] = []
+
 							}
 							const nene = await Database
 								.select('in_member.nama','in_member.id_member')
@@ -375,7 +374,7 @@ class AdminController {
 			.where('in_relation.suami',Inputs.id_member)
 			.orWhere('in_relation.istri',Inputs.id_member)
 			.first()
-
+			if (master) {
 			const suami = await Database
 			.select('nama')
 			.table('in_member')
@@ -509,6 +508,14 @@ class AdminController {
 					anak[keyAnak]['anak'] = []
 					}
 				}
+			}else{
+				const suami = await Database
+				.select('nama')
+				.table('in_member')
+				.where('id_member',Inputs.id_member)
+				.first()
+				return ({suami : suami,istri : '' , anak : []})
+			}
 			return master
 		}
 		
