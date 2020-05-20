@@ -114,7 +114,7 @@ class AdminController {
 			.leftJoin('in_member','in_relation.suami','in_member.id_member')
 			.where('in_member.id_marga',Inputs.id_marga)
 			.where('in_member.jenis_kelamin','L')
-			// .where('in_member.level',Inputs.level)
+			.where('in_member.level',Inputs.level)
 			.orderBy('in_member.nama','ASC')
 		return response.json(ayah)
 	} 
@@ -296,6 +296,226 @@ class AdminController {
 	}
 
 	async PohonSilsilah ({request,response}){
+		const Inputs = request.only(['id_marga','id_member','urutan'])
+		if (Inputs.urutan == 'atas') {
+			const master = await Database
+			.select('in_member.nama','in_marga.nama_marga','in_silsilah.id_member','in_silsilah.id_ayah')
+			.table('in_silsilah')
+			.innerJoin('in_member','in_silsilah.id_member','in_member.id_member')
+			.innerJoin('in_marga','in_silsilah.id_marga','in_marga.id_marga')
+			.where('in_silsilah.id_marga',Inputs.id_marga)
+			.where('in_silsilah.id_member',Inputs.id_member)
+			if (master) {
+				for (var keyAyah = 0; keyAyah < master.length; keyAyah++) {
+					const ayah = await Database
+					.select('in_member.nama','in_member.id_member','in_silsilah.id_ayah')
+					.table('in_member')
+					.innerJoin('in_relation','in_relation.suami','in_member.id_member')
+					.innerJoin('in_silsilah','in_member.id_member','in_silsilah.id_member')
+					.where('id_relationship',master[keyAyah].id_ayah)
+					master[keyAyah]['ayah'] = ayah;
+					if (ayah) {
+						for(var keyKake = 0; keyKake < ayah.length; keyKake++) {
+							const kake = await Database
+								.select('in_member.nama','in_member.id_member','in_silsilah.id_ayah')
+								.table('in_member')
+								.innerJoin('in_relation','in_relation.suami','in_member.id_member')
+								.innerJoin('in_silsilah','in_member.id_member','in_silsilah.id_member')
+								.where('id_relationship',ayah[keyKake].id_ayah)
+							ayah[keyKake]['ayah'] = kake;
+							if (kake) {
+								for(var keyUyut = 0; keyUyut < kake.length; keyUyut++) {
+									const uyut_laki = await Database
+									.select('in_member.nama','in_member.id_member','in_silsilah.id_ayah')
+									.table('in_member')
+									.innerJoin('in_relation','in_relation.suami','in_member.id_member')
+									.innerJoin('in_silsilah','in_member.id_member','in_silsilah.id_member')
+									.where('id_relationship',kake[keyUyut].id_ayah)
+									kake[keyUyut]['ayah'] = uyut_laki;
+									const uyut_cwe = await Database
+									.select('in_member.nama','in_member.id_member')
+									.table('in_member')
+									.innerJoin('in_relation','in_relation.istri','in_member.id_member')
+									.where('id_relationship',kake[keyUyut].id_ayah)
+									kake[keyUyut]['ibu'] = uyut_cwe;
+								}
+							}else{
+								kake[keyUyut]['ayah'] = []
+								kake[keyUyut]['ibu'] = []
+							}
+							const nene = await Database
+								.select('in_member.nama','in_member.id_member')
+								.table('in_member')
+								.innerJoin('in_relation','in_relation.istri','in_member.id_member')
+								.where('id_relationship',ayah[keyKake].id_ayah)
+							ayah[keyKake]['ibu'] = nene;
+						}
+					}else{
+						ayah[keyKake]['ayah'] = [];
+						ayah[keyKake]['ibu'] = [];
+					}
+
+					const ibu = await Database
+					.select('in_member.nama','in_member.id_member')
+					.table('in_member')
+					.innerJoin('in_relation','in_relation.istri','in_member.id_member')
+					.where('id_relationship',master[keyAyah].id_ayah)
+					master[keyAyah]['ibu'] = ibu;
+				}
+			}else{
+				master[keyAyah]['ayah'] = [];
+				master[keyAyah]['ibu'] = [];
+			}
+			
+				return master
+		}else{
+			const master = await Database
+			.select('id_relationship','suami','istri')
+			.table('in_relation')
+			.where('in_relation.suami',Inputs.id_member)
+			.orWhere('in_relation.istri',Inputs.id_member)
+			.first()
+
+			const suami = await Database
+			.select('nama')
+			.table('in_member')
+			.where('id_member',master.suami)
+			.first()
+			master['suami'] = suami
+
+			const istri = await Database
+			.select('nama')
+			.table('in_member')
+			.where('id_member',master.istri)
+			.first()
+			master['istri'] = istri
+
+			const anak = await Database
+			.query()
+			.table('in_silsilah')
+			.where('id_ayah',master.id_relationship)
+			master['anak'] = anak
+				for(var keyAnak = 0; keyAnak < anak.length; keyAnak++) {
+					const masterAnak = await Database
+					.select('id_relationship','suami','istri')
+					.table('in_relation')
+					.where('in_relation.suami',anak[keyAnak].id_member)
+					.orWhere('in_relation.istri',anak[keyAnak].id_member)
+					.first()
+					if (masterAnak) {
+					const suamiAnak = await Database
+					.select('nama')
+					.table('in_member')
+					.where('id_member',masterAnak.suami)
+					.first()
+					anak[keyAnak]['suami'] = suamiAnak
+
+					const istriAnak = await Database
+					.select('nama')
+					.table('in_member')
+					.where('id_member',masterAnak.istri)
+					.first()
+					anak[keyAnak]['istri'] = istriAnak
+
+					const cucu = await Database
+					.query()
+					.table('in_silsilah')
+					.where('id_ayah',masterAnak.id_relationship)
+					anak[keyAnak]['anak'] = cucu
+						for(var keyCucu = 0; keyCucu < cucu.length; keyCucu++) {
+							const masterCucu = await Database
+							.select('id_relationship','suami','istri')
+							.table('in_relation')
+							.where('in_relation.suami',cucu[keyCucu].id_member)
+							.orWhere('in_relation.istri',cucu[keyCucu].id_member)
+							.first()
+							if (masterCucu) {
+							const suamiCucu = await Database
+							.select('nama')
+							.table('in_member')
+							.where('id_member',masterCucu.suami)
+							.first()
+							cucu[keyCucu]['suami'] = suamiCucu
+
+							const istriCucu = await Database
+							.select('nama')
+							.table('in_member')
+							.where('id_member',masterCucu.istri)
+							.first()
+							cucu[keyCucu]['istri'] = istriCucu
+
+							const cicit = await Database
+							.query()
+							.table('in_silsilah')
+							.where('id_ayah',masterCucu.id_relationship)
+							cucu[keyCucu]['anak'] = cicit
+								for(var keyCicit = 0; keyCicit < cicit.length; keyCicit++) {
+									const masterCicit = await Database
+									.select('id_relationship','suami','istri')
+									.table('in_relation')
+									.where('in_relation.suami',cicit[keyCicit].id_member)
+									.orWhere('in_relation.istri',cicit[keyCicit].id_member)
+									.first()
+
+									if (masterCicit) {
+									const suamiCicit = await Database
+									.select('nama')
+									.table('in_member')
+									.where('id_member',masterCicit.suami)
+									.first()
+									cicit[keyCicit]['suami'] = suamiCicit
+
+									const istriCicit = await Database
+									.select('nama')
+									.table('in_member')
+									.where('id_member',masterCicit.istri)
+									.first()
+									cicit[keyCicit]['istri'] = istriCicit
+
+									cicit[keyCucu]['anak'] = []
+
+									}else{
+									const suamiCicit = await Database
+									.select('nama')
+									.table('in_member')
+									.where('id_member',cicit[keyCicit].id_member)
+									.first()	
+
+									cicit[keyCicit]['suami'] = suamiCicit
+									cicit[keyCicit]['istri'] = []
+									cicit[keyCucu]['anak'] = []
+									}
+								}
+							}else{
+							const suamiAnak = await Database
+							.select('nama')
+							.table('in_member')
+							.where('id_member',anak[keyAnak].id_member)
+							.first()
+							cucu[keyCucu]['suami'] = suamiAnak
+							cucu[keyCucu]['istri'] = []
+							cucu[keyCucu]['anak'] = []
+							}
+						}
+					anak[keyAnak]['istri'] = istriAnak
+					}else{
+					const suamiAnak = await Database
+					.select('nama')
+					.table('in_member')
+					.where('id_member',anak[keyAnak].id_member)
+					.first()
+					anak[keyAnak]['suami'] = suamiAnak
+					anak[keyAnak]['istri'] = []
+					anak[keyAnak]['anak'] = []
+					}
+				}
+			return master
+		}
+		
+		
+	}
+
+	async PohonSilsilah_ ({request,response}){
 		const Inputs = request.only(['id_marga','id_member','urutan'])
 		if (Inputs.urutan == 'bawah') {
 			const master = await Database
