@@ -28,7 +28,7 @@ Route.group(() => {
 
 	Route.post('tambah_marga', 'Admin/AdminController.tambah_marga')
 	Route.get('list_marga', 'Admin/AdminController.list_marga')
-	Route.post('delete_marga', 'Admin/AdminController.delete_marga')
+	Route.post('update_marga', 'Admin/AdminController.update_marga')
 	
 }).prefix('api/v1/marga')
 

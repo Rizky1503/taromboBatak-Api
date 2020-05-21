@@ -46,12 +46,12 @@ class AdminController {
 		return response.json(list)
 	}
 
-	async delete_marga ({response,request}){
-		const Inputs = request.only(['id_marga'])
+	async update_marga ({response,request}){
+		const Inputs = request.only(['id_marga','marga'])
 		const list = await Database
 			.from('in_marga')
 			.where('id_marga',Inputs.id_marga)
-			.delete()
+  			.update('nama_marga', Inputs.marga)
 		return response.json('berhasil')
 	}
 // end marga
@@ -148,7 +148,7 @@ class AdminController {
 				.from('in_silsilah')
 				.insert([{
 					id_member : store[0],
-					id_marga : Inputs.marga,
+					id_marga : Inputs.id_marga,
 					id_ayah : Inputs.nama_ayah
 				}])
 
@@ -522,135 +522,7 @@ class AdminController {
 		
 	}
 
-	async PohonSilsilah_ ({request,response}){
-		const Inputs = request.only(['id_marga','id_member','urutan'])
-		if (Inputs.urutan == 'bawah') {
-			const master = await Database
-				.select('in_member.nama','in_marga.nama_marga','in_silsilah.id_member')
-				.table('in_silsilah')
-				.innerJoin('in_member','in_silsilah.id_member','in_member.id_member')
-				.innerJoin('in_marga','in_silsilah.id_marga','in_marga.id_marga')
-				.where('in_silsilah.id_marga',Inputs.id_marga)
-				.where('in_silsilah.id_member',Inputs.id_member)
-			for (var keyMaster = 0; keyMaster < master.length; keyMaster++) {
-				const satu = await Database
-				.select('in_member.nama','in_marga.nama_marga','in_silsilah.id_member')
-				.table('in_silsilah')
-				.innerJoin('in_member','in_silsilah.id_member','in_member.id_member')
-				.innerJoin('in_marga','in_silsilah.id_marga','in_marga.id_marga')
-				.where('in_silsilah.id_marga',Inputs.id_marga)
-				.where('in_silsilah.id_ayah',master[keyMaster].id_member)
-				master[keyMaster]['children'] = satu;
-				for (var keySatu = 0; keySatu < satu.length; keySatu++) {
-					const dua = await Database
-					.select('in_member.nama','in_marga.nama_marga','in_silsilah.id_member')
-					.table('in_silsilah')
-					.innerJoin('in_member','in_silsilah.id_member','in_member.id_member')
-					.innerJoin('in_marga','in_silsilah.id_marga','in_marga.id_marga')
-					.where('in_silsilah.id_marga',Inputs.id_marga)
-					.where('in_silsilah.id_ayah',satu[keySatu].id_member)
-					satu[keySatu]['children'] = dua;
-					for (var keyDua = 0; keyDua < dua.length; keyDua++) {
-						const tiga = await Database
-						.select('in_member.nama','in_marga.nama_marga','in_silsilah.id_member')
-						.table('in_silsilah')
-						.innerJoin('in_member','in_silsilah.id_member','in_member.id_member')
-						.innerJoin('in_marga','in_silsilah.id_marga','in_marga.id_marga')
-						.where('in_silsilah.id_marga',Inputs.id_marga)
-						.where('in_silsilah.id_ayah',dua[keyDua].id_member)
-						dua[keyDua]['children'] = tiga;
-					}
-				}
-			}
-			return response.json(master)
-		}else{
-			const master = await Database
-				.select('in_member.nama','in_marga.nama_marga','in_silsilah.id_member','in_silsilah.id_ayah')
-				.table('in_silsilah')
-				.innerJoin('in_member','in_silsilah.id_member','in_member.id_member')
-				.innerJoin('in_marga','in_silsilah.id_marga','in_marga.id_marga')
-				.where('in_silsilah.id_marga',Inputs.id_marga)
-				.where('in_silsilah.id_member',Inputs.id_member)
 
-			for (var satu = 0; satu < master.length; satu++) {
-					const data = await Database
-						.table('in_silsilah')
-						.select('id_member','id_ayah')
-						.where('id_marga',Inputs.id_marga)
-						.where('id_member', master[satu].id_ayah)
-						.first()
-					if (!data) {
-						master[satu]['children'] = [];
-					}else{
-					const ayah = await Database
-						.select('in_member.nama','in_marga.nama_marga','in_silsilah.id_member','in_silsilah.id_ayah')
-						.table('in_silsilah')
-						.innerJoin('in_member','in_silsilah.id_member','in_member.id_member')
-						.innerJoin('in_marga','in_silsilah.id_marga','in_marga.id_marga')
-						.where('in_silsilah.id_marga',Inputs.id_marga)
-						.where('in_silsilah.id_ayah',data.id_ayah)
-					master[satu]['children'] = ayah;
-
-					for (var dua = 0; dua < ayah.length; dua++) {
-						const data = await Database
-							.table('in_silsilah')
-							.select('id_member','id_ayah')
-							.where('id_marga',Inputs.id_marga)
-							.where('id_member', ayah[dua].id_ayah)
-							.first()
-						if (!data) {
-							ayah[dua]['children'] = [];
-						}else{
-							const kake = await Database
-								.select('in_member.nama','in_marga.nama_marga','in_silsilah.id_member','in_silsilah.id_ayah')
-								.table('in_silsilah')
-								.innerJoin('in_member','in_silsilah.id_member','in_member.id_member')
-								.innerJoin('in_marga','in_silsilah.id_marga','in_marga.id_marga')
-								.where('in_silsilah.id_marga',Inputs.id_marga)
-								.where('in_silsilah.id_ayah',data.id_ayah)						
-							if (ayah[dua].id_member == master[satu].id_ayah) {
-								ayah[dua]['children'] = kake;
-							}else{
-								ayah[dua]['children'] = [];
-							}
-
-							for (var tiga = 0; tiga < kake.length; tiga++) {
-								const data = await Database
-									.table('in_silsilah')
-									.select('id_member','id_ayah')
-									.where('id_marga',Inputs.id_marga)
-									.where('id_member', kake[tiga].id_ayah)
-									.first()
-								if (!data) {
-									kake[tiga]['children'] = [];
-								}else{
-								const uyut = await Database
-									.select('in_member.nama','in_marga.nama_marga','in_silsilah.id_member','in_silsilah.id_ayah')
-									.table('in_silsilah')
-									.innerJoin('in_member','in_silsilah.id_member','in_member.id_member')
-									.innerJoin('in_marga','in_silsilah.id_marga','in_marga.id_marga')
-									.where('in_silsilah.id_marga',Inputs.id_marga)
-									.where('in_silsilah.id_ayah',data.id_ayah)						
-								if (kake[tiga].id_member == ayah[dua].id_ayah) {
-									kake[tiga]['children'] = uyut;
-								}else{
-									kake[tiga]['children'] = [];
-								}
-							}
-						}						
-					}
-				 }
-			  }
-			}
-			
-
-			
-
-				
-			return response.json(master)
-		}
-		
-	}
 // end member
 
 // start home
