@@ -1,6 +1,7 @@
 'use strict'
 const Database = use('Database')
 const Encryption = use('Encryption')
+const moment = require('moment');
 
 class AdminController {
 
@@ -85,13 +86,8 @@ class AdminController {
 	}
 
 	async get_memberId({response,params}){
-		const member = await Database
-			.query()
-			.table('in_member')
-			.orderBy('nama','ASC')
-			.where('id_member',params.id)
-			.first()
-		return response.json(member)
+			const ChangeStatusOrder = await Database.raw("select *,  to_char(tanggal_lahir, 'DD/MM/YYYY') as tanggal_lahir from in_member where id_member = '"+params.id+"' ")
+		return response.json(ChangeStatusOrder.rows)
 	}
 
 	async get_keturunan({response,request}){
@@ -145,7 +141,6 @@ class AdminController {
 				tanggal_lahir: Inputs.tanggal_lahir, 
 				nama_ayah: Inputs.nama_ayah, 
 				referensi: Inputs.referensi, 
-				status_member: 'Approved', 
 				updated_at : new Date(),
 				jenis_kelamin : Inputs.jenis_kelamin, 
 				level : Inputs.level,
@@ -413,7 +408,6 @@ class AdminController {
 			.where('in_relation.suami',Inputs.id_member)
 			.orWhere('in_relation.istri',Inputs.id_member)
 			.first()
-
 			if (master) {
 			const suami = await Database
 			.select('nama','level')
