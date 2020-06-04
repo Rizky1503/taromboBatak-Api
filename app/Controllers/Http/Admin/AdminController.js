@@ -86,7 +86,7 @@ class AdminController {
 	}
 
 	async get_memberId({response,params}){
-			const ChangeStatusOrder = await Database.raw("select *,  to_char(tanggal_lahir, 'DD/MM/YYYY') as tanggal_lahir from in_member where id_member = '"+params.id+"' ")
+		const ChangeStatusOrder = await Database.raw("select *,  to_char(tanggal_lahir, 'MM/DD/YYYY') as tanggal_lahir from in_member where id_member = '"+params.id+"' ")
 		return response.json(ChangeStatusOrder.rows)
 	}
 
@@ -219,13 +219,10 @@ class AdminController {
 
 		if (count.count < 1){
 			const member = await Database
-				.query()
-				.from('in_member')
-				.where('id_member',params.id)
-				.first()
+				.raw("select *,  to_char(tanggal_lahir, 'DD Month YYYY') as tanggal_lahir from in_member where id_member = '"+params.id+"' ")
 			if (member.jenis_kelamin == 'L') {
 				return response.json({
-	            	suami 	: member,
+	            	suami 	: member.rows,
 	            	istri 	: [],
 	            	count   : count.count,
 	            	id_relation : [],
@@ -234,7 +231,7 @@ class AdminController {
 			}else{
 				return response.json({
 	            	suami 	: [],
-	            	istri 	: member,
+	            	istri 	: member.rows,
 	            	count   : count.count,
 	            	id_relation : [],
             		anak : []
@@ -249,40 +246,31 @@ class AdminController {
 				.first()
 
 			const suami = await Database
-				.query()
-				.from('in_member')
-				.where('id_member',member.suami)
-				.first()
+				.raw("select *,  to_char(tanggal_lahir, 'DD Month YYYY') as tanggal_lahir from in_member where id_member = '"+member.suami+"' ")
 
 			const istri = await Database
-				.query()
-				.from('in_member')
-				.where('id_member',member.istri)
-				.first()
+				.raw("select *,  to_char(tanggal_lahir, 'DD Month YYYY') as tanggal_lahir from in_member where id_member = '"+member.istri+"' ")
 
 			const dataAnak = await Database
 				.query()
 				.table('in_silsilah')
 				.where('id_ayah',member.id_relationship)
 
-			var Tampung_Data_soal = [];
+			var Tampung_Data_anak = [];
 	  			for (var i = 0; i < dataAnak.length; i++) {	  			  		
 	  				const soal_mata_pelajaran = await Database
-				  		.query()
-					  	.table('in_member')
-					  	.where('id_member', dataAnak[i].id_member)
-					  	.first()
-				  		Tampung_Data_soal.push(soal_mata_pelajaran);	
+					  	.raw("select *,  to_char(tanggal_lahir, 'DD Month YYYY') as tanggal_lahir from in_member where id_member = '"+dataAnak[i].id_member+"' ")
+				  		Tampung_Data_anak.push(soal_mata_pelajaran.rows);	
 			  }
 
 
 
 			return response.json({
-            	suami 	: suami,
-            	istri 	: istri,
+            	suami 	: suami.rows[0],
+            	istri 	: istri.rows[0],
             	count   : count.count,
             	id_relation : member,
-            	anak : Tampung_Data_soal
+            	anak : Tampung_Data_anak[0]
             })
 		}
 
