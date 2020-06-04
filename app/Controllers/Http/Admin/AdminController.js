@@ -505,8 +505,7 @@ class AdminController {
 									.first()
 									cicit[keyCicit]['istri'] = istriCicit
 
-									cicit[keyCucu]['anak'] = []
-
+									
 									}else{
 									const suamiCicit = await Database
 									.select('nama','level')
@@ -516,7 +515,7 @@ class AdminController {
 
 									cicit[keyCicit]['suami'] = suamiCicit
 									cicit[keyCicit]['istri'] = []
-									cicit[keyCucu]['anak'] = []
+									
 									}
 								}
 							}else{
