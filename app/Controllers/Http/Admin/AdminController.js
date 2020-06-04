@@ -84,6 +84,16 @@ class AdminController {
 		return response.json(member)
 	}
 
+	async get_memberId({response,params}){
+		const member = await Database
+			.query()
+			.table('in_member')
+			.orderBy('nama','ASC')
+			.where('id_member',params.id)
+			.first()
+		return response.json(member)
+	}
+
 	async get_keturunan({response,request}){
 		const Inputs = request.only(['id_marga'])
 		const keturunan = await Database
@@ -117,12 +127,37 @@ class AdminController {
 			.where('in_member.level',Inputs.level)
 			.orderBy('in_member.nama','ASC')
 		return response.json(ayah)
+	}
+
+	async update_member({request,response}){
+		const Inputs = request.only(['id_marga','nama','email','no_telpon','alamat','provinsi_kelahiran','kota_kelahiran','tanggal_lahir','nama_ayah','referensi','keturunan_ke','username','password','jenis_kelamin','level','id_member'])
+		const store = await Database			
+			.table('in_member')
+			.where('id_member',Inputs.id_member)
+			// .update({ id_marga: '33', })
+			.update({
+				id_marga: Inputs.id_marga,
+				nama: Inputs.nama, 
+				email: Inputs.email, 
+				no_telpon: Inputs.no_telpon, 
+				alamat: Inputs.alamat, 
+				provinsi_kelahiran: Inputs.provinsi_kelahiran, 
+				kota_kelahiran: Inputs.kota_kelahiran, 
+				tanggal_lahir: Inputs.tanggal_lahir, 
+				nama_ayah: Inputs.nama_ayah, 
+				referensi: Inputs.referensi, 
+				status_member: 'Approved', 
+				updated_at : new Date(),
+				jenis_kelamin : Inputs.jenis_kelamin, 
+				level : Inputs.level,
+			})
+			return store
+			
 	} 
 
-	async tambah_member ({request,response}){
+	async tambah_member ({request,response}){		
 		const Inputs = request.only(['id_marga','nama','email','no_telpon','alamat','provinsi_kelahiran','kota_kelahiran','tanggal_lahir','nama_ayah','referensi','keturunan_ke','username','password','jenis_kelamin','level','id_member'])
-		const store = await Database
-			.from('in_member')
+		const store = await Database			
 			.insert([{
 				id_marga: Inputs.id_marga,
 				nama: Inputs.nama, 
@@ -142,6 +177,7 @@ class AdminController {
 				jenis_kelamin : Inputs.jenis_kelamin, 
 				level : Inputs.level,
 			}])
+			.into('in_member')
 			.returning('id_member')
 
 			const data = await Database
@@ -170,7 +206,11 @@ class AdminController {
 				}
 			}
 
-		return response.json(store[0])
+		return response.status(200).json({
+            	status 	: true,
+            	data 	: store[0]
+        })
+
 	}
 
 	async GetMemberFromId ({request,response,params}){
