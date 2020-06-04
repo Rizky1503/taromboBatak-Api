@@ -134,7 +134,6 @@ class AdminController {
 		const store = await Database			
 			.table('in_member')
 			.where('id_member',Inputs.id_member)
-			// .update({ id_marga: '33', })
 			.update({
 				id_marga: Inputs.id_marga,
 				nama: Inputs.nama, 
@@ -414,9 +413,10 @@ class AdminController {
 			.where('in_relation.suami',Inputs.id_member)
 			.orWhere('in_relation.istri',Inputs.id_member)
 			.first()
+
 			if (master) {
 			const suami = await Database
-			.select('nama')
+			.select('nama','level')
 			.table('in_member')
 			.where('id_member',master.suami)
 			.first()
@@ -443,7 +443,7 @@ class AdminController {
 					.first()
 					if (masterAnak) {
 					const suamiAnak = await Database
-					.select('nama')
+					.select('nama','level')
 					.table('in_member')
 					.where('id_member',masterAnak.suami)
 					.first()
@@ -470,7 +470,7 @@ class AdminController {
 							.first()
 							if (masterCucu) {
 							const suamiCucu = await Database
-							.select('nama')
+							.select('nama','level')
 							.table('in_member')
 							.where('id_member',masterCucu.suami)
 							.first()
@@ -498,7 +498,7 @@ class AdminController {
 
 									if (masterCicit) {
 									const suamiCicit = await Database
-									.select('nama')
+									.select('nama','level')
 									.table('in_member')
 									.where('id_member',masterCicit.suami)
 									.first()
@@ -515,7 +515,7 @@ class AdminController {
 
 									}else{
 									const suamiCicit = await Database
-									.select('nama')
+									.select('nama','level')
 									.table('in_member')
 									.where('id_member',cicit[keyCicit].id_member)
 									.first()	
@@ -527,7 +527,7 @@ class AdminController {
 								}
 							}else{
 							const suamiAnak = await Database
-							.select('nama')
+							.select('nama','level')
 							.table('in_member')
 							.where('id_member',anak[keyAnak].id_member)
 							.first()
@@ -539,7 +539,7 @@ class AdminController {
 					anak[keyAnak]['istri'] = istriAnak
 					}else{
 					const suamiAnak = await Database
-					.select('nama')
+					.select('nama','level')
 					.table('in_member')
 					.where('id_member',anak[keyAnak].id_member)
 					.first()
@@ -550,7 +550,7 @@ class AdminController {
 				}
 			}else{
 				const suami = await Database
-				.select('nama')
+				.select('nama','level')
 				.table('in_member')
 				.where('id_member',Inputs.id_member)
 				.first()
