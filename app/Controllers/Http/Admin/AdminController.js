@@ -522,7 +522,7 @@ class AdminController {
 							const suamiAnak = await Database
 							.select('nama','level')
 							.table('in_member')
-							.where('id_member',cucu[keyAnak].id_member)
+							.where('id_member',cucu[keyCucu].id_member)
 							.first()
 							cucu[keyCucu]['suami'] = suamiAnak
 							cucu[keyCucu]['istri'] = []
